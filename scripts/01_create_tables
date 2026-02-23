@@ -1,0 +1,177 @@
+------------------------------------
+-- Script 1: 01_create_tables.sql 
+-- Includes: Primary keys (PK), Foreign keys (FK), Attribute-level constraints (NOT NULL, CHECK) in multiple tables Tuple-level constraint for "Order": exactly one of customer_id or group_id is set (XOR)
+------------------------------------
+
+
+CREATE TABLE participantcustomer (
+  customer_id      INT PRIMARY KEY,
+  first_name       VARCHAR(50) NOT NULL,
+  last_name        VARCHAR(50) NOT NULL,
+  email_address    VARCHAR(255) NOT NULL UNIQUE,
+  phone_number     VARCHAR(30) NOT NULL,
+  delivery_address VARCHAR(255),
+  created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Group" (
+  group_id    INT PRIMARY KEY,
+  group_name  VARCHAR(100) NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE belongs (
+  customer_id INT NOT NULL,
+  group_id    INT NOT NULL,
+  joined_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT pk_belongs PRIMARY KEY (customer_id, group_id),
+  CONSTRAINT fk_belongs_customer FOREIGN KEY (customer_id)
+    REFERENCES participantcustomer(customer_id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_belongs_group FOREIGN KEY (group_id)
+    REFERENCES "Group"(group_id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE restaurant (
+  restaurant_id INT PRIMARY KEY,
+  name          VARCHAR(120) NOT NULL,
+  address       VARCHAR(255) NOT NULL,
+  opening_hours VARCHAR(50)  NOT NULL,
+  cuisine_type  VARCHAR(50)  NOT NULL
+);
+
+CREATE TABLE menu (
+  menu_id       INT PRIMARY KEY,
+  restaurant_id INT NOT NULL,
+  menu_name     VARCHAR(100) NOT NULL,
+  last_updated  TIMESTAMP,
+  CONSTRAINT fk_menu_restaurant FOREIGN KEY (restaurant_id)
+    REFERENCES restaurant(restaurant_id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE menu_item (
+  menuitem_id  INT PRIMARY KEY,
+  item_name    VARCHAR(120) NOT NULL,
+  description  VARCHAR(255),
+  category     VARCHAR(50) NOT NULL,
+  price        NUMERIC(10,2) NOT NULL
+    CONSTRAINT ck_menu_item_price CHECK (price > 0),
+  isavailable  BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE contains_menuitem (
+  menu_id     INT NOT NULL,
+  menuitem_id INT NOT NULL,
+  CONSTRAINT pk_contains PRIMARY KEY (menu_id, menuitem_id),
+  CONSTRAINT fk_contains_menu FOREIGN KEY (menu_id)
+    REFERENCES menu(menu_id) ON DELETE CASCADE,
+  CONSTRAINT fk_contains_item FOREIGN KEY (menuitem_id)
+    REFERENCES menu_item(menuitem_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE "Order" (
+  order_id         INT PRIMARY KEY,
+  restaurant_id    INT NOT NULL,
+  order_timestamp  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  order_status     VARCHAR(30) NOT NULL
+    CONSTRAINT ck_order_status CHECK (order_status IN ('created','confirmed','preparing','delivered','cancelled')),
+  delivery_address VARCHAR(255) NOT NULL,
+  total_amount     NUMERIC(10,2) NOT NULL DEFAULT 0
+    CONSTRAINT ck_order_total CHECK (total_amount >= 0),
+
+  -- Individual vs Group (XOR)
+  customer_id      INT NULL,
+  group_id         INT NULL,
+
+  CONSTRAINT fk_order_restaurant FOREIGN KEY (restaurant_id)
+    REFERENCES restaurant(restaurant_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_order_customer FOREIGN KEY (customer_id)
+    REFERENCES participantcustomer(customer_id) ON DELETE SET NULL,
+  CONSTRAINT fk_order_group FOREIGN KEY (group_id)
+    REFERENCES "Group"(group_id) ON DELETE SET NULL,
+
+  -- tuple-level CHECK (XOR: exactly one is set)
+  CONSTRAINT ck_order_xor CHECK (
+    (customer_id IS NOT NULL AND group_id IS NULL)
+ OR (customer_id IS NULL AND group_id IS NOT NULL)
+  )
+);
+
+CREATE TABLE order_item (
+  order_id             INT NOT NULL,
+  line_no              INT NOT NULL,
+  menuitem_id          INT NOT NULL,
+  quantity             INT NOT NULL
+    CONSTRAINT ck_quantity CHECK (quantity > 0),
+  priceatordertime     NUMERIC(10,2) NOT NULL
+    CONSTRAINT ck_price_at_order CHECK (priceatordertime > 0),
+  special_instructions VARCHAR(255),
+  customer_id          INT NULL,
+
+  CONSTRAINT pk_order_item PRIMARY KEY (order_id, line_no),
+
+  CONSTRAINT fk_oi_order FOREIGN KEY (order_id)
+    REFERENCES "Order"(order_id) ON DELETE CASCADE,
+  CONSTRAINT fk_oi_item FOREIGN KEY (menuitem_id)
+    REFERENCES menu_item(menuitem_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_oi_customer FOREIGN KEY (customer_id)
+    REFERENCES participantcustomer(customer_id) ON DELETE SET NULL
+);
+
+CREATE TABLE paymenttransaction (
+  transaction_id    INT PRIMARY KEY,
+  order_id          INT NOT NULL,
+  payer_customer_id INT NOT NULL,
+  amount            NUMERIC(10,2) NOT NULL
+    CONSTRAINT ck_payment_amount CHECK (amount > 0),
+  currency          CHAR(3) NOT NULL DEFAULT 'EUR',
+  transaction_time  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  payment_method    VARCHAR(30) NOT NULL,
+  payment_status    VARCHAR(30) NOT NULL
+    CONSTRAINT ck_payment_status CHECK (payment_status IN ('pending','successful','failed','refunded')),
+
+  CONSTRAINT fk_pay_order FOREIGN KEY (order_id)
+    REFERENCES "Order"(order_id) ON DELETE CASCADE,
+  CONSTRAINT fk_pay_customer FOREIGN KEY (payer_customer_id)
+    REFERENCES participantcustomer(customer_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE courier (
+  courier_id   INT PRIMARY KEY,
+  first_name   VARCHAR(50) NOT NULL,
+  last_name    VARCHAR(50) NOT NULL,
+  phone_number VARCHAR(30) NOT NULL,
+  vehicle_type VARCHAR(30) NOT NULL
+    CONSTRAINT ck_vehicle CHECK (vehicle_type IN ('Bike','Car','Scooter'))
+);
+
+CREATE TABLE delivery (
+  delivery_id     INT PRIMARY KEY,
+  order_id        INT NOT NULL UNIQUE,
+  delivery_status VARCHAR(30) NOT NULL
+    CONSTRAINT ck_delivery_status CHECK (delivery_status IN ('assigned','picked_up','delivered','failed')),
+  pickup_time     TIMESTAMP,
+  dropoff_time    TIMESTAMP,
+  delivery_fee    NUMERIC(10,2) NOT NULL DEFAULT 0
+    CONSTRAINT ck_delivery_fee CHECK (delivery_fee >= 0),
+
+  CONSTRAINT fk_delivery_order FOREIGN KEY (order_id)
+    REFERENCES "Order"(order_id) ON DELETE CASCADE
+);
+
+CREATE TABLE assigned (
+  delivery_id INT NOT NULL,
+  courier_id  INT NOT NULL,
+  assignedat  TIMESTAMP,
+  acceptedat  TIMESTAMP,
+
+  CONSTRAINT pk_assigned PRIMARY KEY (delivery_id, courier_id),
+
+  CONSTRAINT fk_assigned_delivery FOREIGN KEY (delivery_id)
+    REFERENCES delivery(delivery_id) ON DELETE CASCADE,
+
+  CONSTRAINT fk_assigned_courier FOREIGN KEY (courier_id)
+    REFERENCES courier(courier_id) ON DELETE RESTRICT
+);

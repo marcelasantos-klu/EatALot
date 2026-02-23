@@ -1,0 +1,62 @@
+-- ============================================================
+-- 05_views.sql
+-- EatALot Delivery — Views (PostgreSQL)
+-- ============================================================
+
+-- View 1: Order payment summary (paid vs remaining)
+CREATE OR REPLACE VIEW v_order_payment_summary AS
+SELECT
+  o.order_id,
+  o.restaurant_id,
+  o.customer_id,
+  o.group_id,
+  o.order_status,
+  o.order_timestamp,
+  o.total_amount,
+  COALESCE(SUM(CASE WHEN pt.payment_status = 'successful' THEN pt.amount ELSE 0 END), 0) AS paid_successful,
+  COALESCE(SUM(CASE WHEN pt.payment_status = 'pending' THEN pt.amount ELSE 0 END), 0) AS paid_pending,
+  o.total_amount
+    - COALESCE(SUM(CASE WHEN pt.payment_status = 'successful' THEN pt.amount ELSE 0 END), 0) AS remaining_due
+FROM "Order" o
+LEFT JOIN paymenttransaction pt
+  ON pt.order_id = o.order_id
+GROUP BY
+  o.order_id, o.restaurant_id, o.customer_id, o.group_id,
+  o.order_status, o.order_timestamp, o.total_amount;
+
+
+-- View 2: Restaurant monthly revenue (based on order totals)
+CREATE OR REPLACE VIEW v_restaurant_monthly_revenue AS
+SELECT
+  r.restaurant_id,
+  r.name AS restaurant_name,
+  date_trunc('month', o.order_timestamp) AS month,
+  SUM(o.total_amount) AS revenue
+FROM restaurant r
+JOIN "Order" o
+  ON o.restaurant_id = r.restaurant_id
+GROUP BY
+  r.restaurant_id, r.name, date_trunc('month', o.order_timestamp);
+
+
+-- View 3: Delivery overview (order + delivery + assigned courier)
+CREATE OR REPLACE VIEW v_delivery_overview AS
+SELECT
+  o.order_id,
+  o.order_status,
+  d.delivery_id,
+  d.delivery_status,
+  d.pickup_time,
+  d.dropoff_time,
+  d.delivery_fee,
+  c.courier_id,
+  c.first_name AS courier_first_name,
+  c.last_name  AS courier_last_name,
+  c.vehicle_type
+FROM "Order" o
+LEFT JOIN delivery d
+  ON d.order_id = o.order_id
+LEFT JOIN assigned a
+  ON a.delivery_id = d.delivery_id
+LEFT JOIN courier c
+  ON c.courier_id = a.courier_id;

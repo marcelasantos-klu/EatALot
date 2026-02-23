@@ -1,0 +1,26 @@
+-- ============================================================
+-- 04_indexes.sql
+-- EatALot Delivery — Indexes (PostgreSQL)
+-- ============================================================
+
+-- Speed up joins / foreign-key lookups
+CREATE INDEX idx_order_customer_id ON "Order"(customer_id);
+CREATE INDEX idx_order_group_id ON "Order"(group_id);
+CREATE INDEX idx_order_restaurant_id ON "Order"(restaurant_id);
+
+CREATE INDEX idx_belongs_group_id ON belongs(group_id);
+CREATE INDEX idx_belongs_customer_id ON belongs(customer_id);
+
+CREATE INDEX idx_order_item_order_id ON order_item(order_id);
+CREATE INDEX idx_order_item_menuitem_id ON order_item(menuitem_id);
+CREATE INDEX idx_order_item_customer_id ON order_item(customer_id);
+
+CREATE INDEX idx_payment_order_id ON paymenttransaction(order_id);
+CREATE INDEX idx_payment_payer_id ON paymenttransaction(payer_customer_id);
+
+CREATE INDEX idx_delivery_order_id ON delivery(order_id);
+CREATE INDEX idx_assigned_courier_id ON assigned(courier_id);
+
+-- Common filtering patterns
+CREATE INDEX idx_order_status_timestamp ON "Order"(order_status, order_timestamp);
+CREATE INDEX idx_payment_status_time ON paymenttransaction(payment_status, transaction_time);

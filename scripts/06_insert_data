@@ -1,0 +1,309 @@
+-- 06_insert_data.sql  (ALL-IN-ONE, consistent themed menus)
+-- Assumes tables + triggers already exist.
+-- Inserts: 15 tuples per relation (Menu_Item + Contains_MenuItem have 25 to support 5 items per each of 5 themed restaurants)
+ 
+BEGIN;
+ 
+-- =========================
+-- 1) ParticipantCustomer (15)
+-- =========================
+INSERT INTO ParticipantCustomer
+(customer_id, first_name, last_name, email_address, phone_number, delivery_address, created_at)
+VALUES
+(1,'Daria','Fedorova','daria@eatalot.com','+49-111','Reeperbahn 12, Hamburg','2026-02-01 10:00'),
+(2,'Marcela','Santos','marcela@eatalot.com','+49-112','Jungfernstieg 5, Hamburg','2026-02-01 10:05'),
+(3,'Jon','Meyer','jon@eatalot.com','+49-113','Schanzenstr. 8, Hamburg','2026-02-01 10:10'),
+(4,'Lina','Schulz','lina@eatalot.com','+49-114','Altonaer Str. 44, Hamburg','2026-02-01 10:15'),
+(5,'Noah','Klein','noah@eatalot.com','+49-115','Millerntor 1, Hamburg','2026-02-01 10:20'),
+(6,'Mia','Fischer','mia@eatalot.com','+49-116','HafenCity 2, Hamburg','2026-02-01 10:25'),
+(7,'Omar','Ali','omar@eatalot.com','+49-117','Eppendorf 7, Hamburg','2026-02-01 10:30'),
+(8,'Sara','Novak','sara@eatalot.com','+49-118','Ottensen 3, Hamburg','2026-02-01 10:35'),
+(9,'Paul','Weber','paul@eatalot.com','+49-119','St. Georg 9, Hamburg','2026-02-01 10:40'),
+(10,'Emma','Rossi','emma@eatalot.com','+49-120','Barmbek 6, Hamburg','2026-02-01 10:45'),
+(11,'Ben','Hoffmann','ben@eatalot.com','+49-121','Wandsbek 10, Hamburg','2026-02-01 10:50'),
+(12,'Lea','Kruger','lea@eatalot.com','+49-122','Harburg 2, Hamburg','2026-02-01 10:55'),
+(13,'Tim','Schneider','tim@eatalot.com','+49-123','Rotherbaum 4, Hamburg','2026-02-01 11:00'),
+(14,'Anna','Nowak','anna@eatalot.com','+49-124','St. Pauli 8, Hamburg','2026-02-01 11:05'),
+(15,'Luca','Bianchi','luca@eatalot.com','+49-125','Winterhude 6, Hamburg','2026-02-01 11:10');
+ 
+-- =========================
+-- 2) "Group" (15)
+-- =========================
+INSERT INTO "Group"(group_id, group_name, created_at) VALUES
+(101,'Lunch Squad','2026-02-02 09:00'),
+(102,'Office Crew','2026-02-02 09:05'),
+(103,'Study Group','2026-02-02 09:10'),
+(104,'Family Dinner','2026-02-02 09:15'),
+(105,'Friends Night','2026-02-02 09:20'),
+(106,'Vegan Club','2026-02-02 09:25'),
+(107,'Sushi Fans','2026-02-02 09:30'),
+(108,'Pizza Lovers','2026-02-02 09:35'),
+(109,'Late Snackers','2026-02-02 09:40'),
+(110,'Team Alpha','2026-02-02 09:45'),
+(111,'Team Beta','2026-02-02 09:50'),
+(112,'Movie Night','2026-02-02 09:55'),
+(113,'Gym Buddies','2026-02-02 10:00'),
+(114,'Weekend Brunch','2026-02-02 10:05'),
+(115,'Dessert Crew','2026-02-02 10:10');
+ 
+-- =========================
+-- 3) Belongs (15)
+-- =========================
+INSERT INTO Belongs(customer_id, group_id, joined_at) VALUES
+(1,101,'2026-02-02 10:00'),
+(2,101,'2026-02-02 10:01'),
+(3,102,'2026-02-02 10:02'),
+(4,102,'2026-02-02 10:03'),
+(5,103,'2026-02-02 10:04'),
+(6,104,'2026-02-02 10:05'),
+(7,105,'2026-02-02 10:06'),
+(8,106,'2026-02-02 10:07'),
+(9,107,'2026-02-02 10:08'),
+(10,108,'2026-02-02 10:09'),
+(11,109,'2026-02-02 10:10'),
+(12,110,'2026-02-02 10:11'),
+(13,111,'2026-02-02 10:12'),
+(14,112,'2026-02-02 10:13'),
+(15,113,'2026-02-02 10:14');
+ 
+-- =========================
+-- 4) Restaurant (15)
+-- =========================
+INSERT INTO Restaurant(restaurant_id, name, address, opening_hours, cuisine_type) VALUES
+(1,'Bella Pasta','Reeperbahn 12, Hamburg','11:00-23:00','Italian'),
+(2,'Sushi Zen','Jungfernstieg 5, Hamburg','12:00-22:00','Japanese'),
+(3,'Curry Corner','Schanzenstr. 8, Hamburg','10:00-21:00','Indian'),
+(4,'Vegan Vibes','Altonaer Str. 44, Hamburg','11:00-20:00','Vegan'),
+(5,'Burger Hub','Millerntor 1, Hamburg','11:00-23:00','American'),
+(6,'Taco Town','HafenCity 2, Hamburg','12:00-22:00','Mexican'),
+(7,'Noodle House','Eppendorf 7, Hamburg','11:00-22:00','Asian'),
+(8,'Kebab King','Ottensen 3, Hamburg','10:00-22:00','Turkish'),
+(9,'Breakfast Bistro','St. Georg 9, Hamburg','07:00-15:00','Breakfast'),
+(10,'Pizza Palace','Barmbek 6, Hamburg','11:00-23:00','Italian'),
+(11,'Ramen Room','Wandsbek 10, Hamburg','11:30-22:30','Japanese'),
+(12,'Falafel Factory','Harburg 2, Hamburg','10:00-21:30','Middle Eastern'),
+(13,'BBQ Barn','Rotherbaum 4, Hamburg','12:00-23:00','American'),
+(14,'Seafood Spot','St. Pauli 8, Hamburg','11:00-22:00','Seafood'),
+(15,'Gelato Garden','Winterhude 6, Hamburg','12:00-21:00','Italian');
+ 
+-- =========================
+-- 5) Menu (15)  (1 menu per restaurant)
+-- =========================
+INSERT INTO Menu(menu_id, restaurant_id, menu_name, last_updated) VALUES
+(1,1,'Main Menu','2026-02-08 05:48'),
+(2,2,'Main Menu','2026-02-08 05:49'),
+(3,3,'Main Menu','2026-02-08 05:50'),
+(4,4,'Main Menu','2026-02-08 05:51'),
+(5,5,'Main Menu','2026-02-08 05:52'),
+(6,6,'Main Menu','2026-02-08 05:53'),
+(7,7,'Main Menu','2026-02-08 05:54'),
+(8,8,'Main Menu','2026-02-08 05:55'),
+(9,9,'Main Menu','2026-02-08 05:56'),
+(10,10,'Main Menu','2026-02-08 05:57'),
+(11,11,'Main Menu','2026-02-08 05:58'),
+(12,12,'Main Menu','2026-02-08 05:59'),
+(13,13,'Main Menu','2026-02-08 06:00'),
+(14,14,'Main Menu','2026-02-08 06:01'),
+(15,15,'Main Menu','2026-02-08 06:02');
+ 
+-- =========================
+-- 6) Menu_Item (25)  (5 items per each of 5 themed restaurants)
+-- =========================
+INSERT INTO Menu_Item(menuitem_id, item_name, description, category, price, isavailable) VALUES
+-- Italian (Restaurant 1 / Menu 1): 1–5
+(1,'Spaghetti Carbonara','Creamy pasta with pancetta','Pasta',12.50,TRUE),
+(2,'Margherita Pizza','Tomato, mozzarella, basil','Pizza',11.00,TRUE),
+(3,'Lasagna al Forno','Baked lasagna with beef ragu','Pasta',13.50,TRUE),
+(4,'Bruschetta','Tomato, garlic, olive oil','Starter',6.00,TRUE),
+(5,'Tiramisu','Coffee-flavored dessert','Dessert',6.50,TRUE),
+ 
+-- Sushi (Restaurant 2 / Menu 2): 6–10
+(6,'Salmon Nigiri (6)','Fresh salmon nigiri','Sushi',10.00,TRUE),
+(7,'California Roll','Crab, avocado, cucumber','Sushi',9.50,TRUE),
+(8,'Spicy Tuna Roll','Tuna, chili mayo','Sushi',10.50,TRUE),
+(9,'Miso Soup','Traditional miso soup','Soup',3.50,TRUE),
+(10,'Edamame','Steamed soybeans','Side',4.00,TRUE),
+ 
+-- Burger (Restaurant 5 / Menu 5): 11–15
+(11,'Cheeseburger','Beef patty, cheddar, pickles','Burger',10.50,TRUE),
+(12,'Bacon Burger','Beef patty, bacon, cheddar','Burger',11.50,TRUE),
+(13,'Veggie Burger','Plant patty, lettuce, tomato','Burger',10.00,TRUE),
+(14,'French Fries','Crispy fries','Side',4.00,TRUE),
+(15,'Chicken Wings (6)','BBQ wings','Side',7.00,TRUE),
+ 
+-- Asian Noodles (Restaurant 7 / Menu 7): 16–20
+(16,'Pad Thai','Rice noodles, peanuts, tamarind','Noodles',12.50,TRUE),
+(17,'Chicken Ramen','Ramen with chicken broth','Noodles',13.00,TRUE),
+(18,'Beef Udon','Udon noodles with beef','Noodles',13.50,TRUE),
+(19,'Veggie Stir-Fry Noodles','Mixed vegetables, soy sauce','Noodles',11.50,TRUE),
+(20,'Spring Rolls (4)','Crispy veggie rolls','Starter',6.50,TRUE),
+ 
+-- Breakfast (Restaurant 9 / Menu 9): 21–25
+(21,'Pancakes','Pancakes with maple syrup','Breakfast',8.50,TRUE),
+(22,'Avocado Toast','Sourdough, avocado, egg','Breakfast',9.50,TRUE),
+(23,'Omelette','3-egg omelette','Breakfast',9.00,TRUE),
+(24,'Granola Bowl','Yogurt, granola, berries','Breakfast',7.50,TRUE),
+(25,'Cappuccino','Fresh coffee drink','Drink',3.80,TRUE);
+ 
+-- =========================
+-- 7) Contains_MenuItem (25)  (5 items per menu for the 5 themed restaurants)
+-- =========================
+INSERT INTO Contains_MenuItem(menu_id, menuitem_id) VALUES
+-- Menu 1 (Italian / Restaurant 1)
+(1,1),(1,2),(1,3),(1,4),(1,5),
+ 
+-- Menu 2 (Sushi / Restaurant 2)
+(2,6),(2,7),(2,8),(2,9),(2,10),
+ 
+-- Menu 5 (Burger / Restaurant 5)
+(5,11),(5,12),(5,13),(5,14),(5,15),
+ 
+-- Menu 7 (Asian Noodles / Restaurant 7)
+(7,16),(7,17),(7,18),(7,19),(7,20),
+ 
+-- Menu 9 (Breakfast / Restaurant 9)
+(9,21),(9,22),(9,23),(9,24),(9,25);
+ 
+-- =========================
+-- 8) "Order" (15)
+-- Insert with total_amount=0 first (trigger recalculates after Order_Item insert)
+-- =========================
+INSERT INTO "Order"
+(order_id, restaurant_id, order_timestamp, order_status, delivery_address, total_amount, customer_id, group_id)
+VALUES
+-- individual (8)
+(1001,1,'2026-02-10 12:00','confirmed','Reeperbahn 12, Hamburg',0,1,NULL),
+(1002,2,'2026-02-10 12:05','confirmed','Jungfernstieg 5, Hamburg',0,2,NULL),
+(1003,7,'2026-02-10 12:10','preparing','Schanzenstr. 8, Hamburg',0,3,NULL),
+(1004,9,'2026-02-10 12:15','delivered','Altonaer Str. 44, Hamburg',0,4,NULL),
+(1005,5,'2026-02-10 12:20','delivered','Millerntor 1, Hamburg',0,5,NULL),
+(1006,2,'2026-02-10 12:25','confirmed','Wandsbek 10, Hamburg',0,6,NULL),
+(1007,1,'2026-02-10 12:30','confirmed','Harburg 2, Hamburg',0,7,NULL),
+(1008,9,'2026-02-10 12:35','cancelled','Winterhude 6, Hamburg',0,8,NULL),
+ 
+-- group (7) XOR satisfied
+(1009,1,'2026-02-10 12:40','confirmed','Reeperbahn 12, Hamburg',0,NULL,101),
+(1010,2,'2026-02-10 12:45','delivered','Jungfernstieg 5, Hamburg',0,NULL,102),
+(1011,5,'2026-02-10 12:50','confirmed','Schanzenstr. 8, Hamburg',0,NULL,103),
+(1012,7,'2026-02-10 12:55','delivered','Altonaer Str. 44, Hamburg',0,NULL,104),
+(1013,9,'2026-02-10 13:00','preparing','Barmbek 6, Hamburg',0,NULL,105),
+(1014,2,'2026-02-10 13:05','delivered','Jungfernstieg 5, Hamburg',0,NULL,106),
+(1015,5,'2026-02-10 13:10','confirmed','Reeperbahn 12, Hamburg',0,NULL,107);
+ 
+-- =========================
+-- 9) Order_Item (15)
+-- Trigger recalculates Order.total_amount
+-- Group orders: customer_id must belong to that group (trigger enforces)
+-- =========================
+INSERT INTO Order_Item
+(order_id, line_no, menuitem_id, quantity, priceatordertime, special_instructions, customer_id)
+VALUES
+-- individual
+(1001,1,1,1,12.50,'no pancetta',1),
+(1002,1,6,1,10.00,NULL,2),
+(1003,1,16,1,12.50,'less peanuts',3),
+(1004,1,21,1,8.50,NULL,4),
+(1005,1,11,1,10.50,'no pickles',5),
+(1006,1,8,1,10.50,NULL,6),
+(1007,1,3,1,13.50,NULL,7),
+(1008,1,25,1,3.80,NULL,8),
+ 
+-- group (chooser must belong to that group)
+(1009,1,2,2,11.00,NULL,1),   -- group 101: customer 1 belongs
+(1010,1,7,1,9.50,NULL,3),    -- group 102: customer 3 belongs
+(1011,1,14,1,4.00,NULL,5),   -- group 103: customer 5 belongs
+(1012,1,17,1,13.00,NULL,6),  -- group 104: customer 6 belongs
+(1013,1,22,1,9.50,NULL,7),   -- group 105: customer 7 belongs
+(1014,1,10,1,4.00,NULL,8),   -- group 106: customer 8 belongs
+(1015,1,12,1,11.50,NULL,9);  -- group 107: customer 9 belongs
+ 
+-- =========================
+-- 10) PaymentTransaction (15)
+-- Amounts match the totals after triggers (successful payments won't exceed totals)
+-- =========================
+INSERT INTO PaymentTransaction
+(transaction_id, order_id, payer_customer_id, amount, currency, transaction_time, payment_method, payment_status)
+VALUES
+(5001,1001,1,12.50,'EUR','2026-02-10 12:02','Card','pending'),
+(5002,1002,2,10.00,'EUR','2026-02-10 12:07','Card','successful'),
+(5003,1003,3,12.50,'EUR','2026-02-10 12:12','PayPal','successful'),
+(5004,1004,4,8.50,'EUR','2026-02-10 12:17','Card','successful'),
+(5005,1005,5,10.50,'EUR','2026-02-10 12:22','Card','successful'),
+(5006,1006,6,10.50,'EUR','2026-02-10 12:27','Card','successful'),
+(5007,1007,7,13.50,'EUR','2026-02-10 12:32','PayPal','successful'),
+(5008,1008,8,3.80,'EUR','2026-02-10 12:37','Card','failed'),
+ 
+(5009,1009,1,22.00,'EUR','2026-02-10 12:42','Card','successful'),
+(5010,1010,3,9.50,'EUR','2026-02-10 12:47','Card','successful'),
+(5011,1011,5,4.00,'EUR','2026-02-10 12:52','PayPal','pending'),
+(5012,1012,6,13.00,'EUR','2026-02-10 12:57','Card','successful'),
+(5013,1013,7,9.50,'EUR','2026-02-10 13:02','Card','pending'),
+(5014,1014,8,4.00,'EUR','2026-02-10 13:07','Card','successful'),
+(5015,1015,9,11.50,'EUR','2026-02-10 13:12','PayPal','pending');
+ 
+-- =========================
+-- 11) Courier (15)
+-- =========================
+INSERT INTO Courier(courier_id, first_name, last_name, phone_number, vehicle_type) VALUES
+(201,'Alex','Khan','+49-501','Bike'),
+(202,'Nina','Wolf','+49-502','Car'),
+(203,'Ben','Hart','+49-503','Bike'),
+(204,'Lea','Brandt','+49-504','Scooter'),
+(205,'Ivan','Petrov','+49-505','Car'),
+(206,'Maya','Singh','+49-506','Bike'),
+(207,'Tom','Becker','+49-507','Scooter'),
+(208,'Zoe','Lang','+49-508','Bike'),
+(209,'Luca','Moretti','+49-509','Car'),
+(210,'Ava','Neumann','+49-510','Bike'),
+(211,'Sam','Jensen','+49-511','Scooter'),
+(212,'Iris','Cole','+49-512','Bike'),
+(213,'Hugo','Silva','+49-513','Car'),
+(214,'Nora','Lehmann','+49-514','Bike'),
+(215,'Eric','Zhang','+49-515','Scooter');
+ 
+-- =========================
+-- 12) Delivery (15)  (1:1 with Order)
+-- Delivered orders have delivered deliveries + dropoff_time NOT NULL
+-- =========================
+INSERT INTO Delivery
+(delivery_id, order_id, delivery_status, pickup_time, dropoff_time, delivery_fee)
+VALUES
+(9001,1001,'assigned',NULL,NULL,3.50),
+(9002,1002,'picked_up','2026-02-10 12:20',NULL,4.00),
+(9003,1003,'picked_up','2026-02-10 12:25',NULL,3.00),
+(9004,1004,'delivered','2026-02-10 12:10','2026-02-10 12:40',2.50),
+(9005,1005,'delivered','2026-02-10 12:15','2026-02-10 12:45',3.00),
+(9006,1006,'assigned',NULL,NULL,3.50),
+(9007,1007,'assigned',NULL,NULL,4.00),
+(9008,1008,'failed',NULL,NULL,0.00),
+ 
+(9009,1009,'assigned',NULL,NULL,3.50),
+(9010,1010,'delivered','2026-02-10 12:30','2026-02-10 13:05',4.50),
+(9011,1011,'assigned',NULL,NULL,3.00),
+(9012,1012,'delivered','2026-02-10 12:35','2026-02-10 13:10',3.50),
+(9013,1013,'picked_up','2026-02-10 13:10',NULL,4.00),
+(9014,1014,'delivered','2026-02-10 12:50','2026-02-10 13:25',4.00),
+(9015,1015,'assigned',NULL,NULL,3.50);
+ 
+-- =========================
+-- 13) Assigned (15)
+-- =========================
+INSERT INTO Assigned(delivery_id, courier_id, assignedat, acceptedat) VALUES
+(9001,201,'2026-02-10 12:01',NULL),
+(9002,202,'2026-02-10 12:06','2026-02-10 12:07'),
+(9003,203,'2026-02-10 12:11','2026-02-10 12:12'),
+(9004,204,'2026-02-10 12:09','2026-02-10 12:09'),
+(9005,205,'2026-02-10 12:14','2026-02-10 12:15'),
+(9006,206,'2026-02-10 12:26',NULL),
+(9007,207,'2026-02-10 12:31',NULL),
+(9008,208,'2026-02-10 12:36','2026-02-10 12:37'),
+ 
+(9009,209,'2026-02-10 12:41',NULL),
+(9010,210,'2026-02-10 12:46','2026-02-10 12:47'),
+(9011,211,'2026-02-10 12:51',NULL),
+(9012,212,'2026-02-10 12:56','2026-02-10 12:57'),
+(9013,213,'2026-02-10 13:01','2026-02-10 13:02'),
+(9014,214,'2026-02-10 13:06','2026-02-10 13:07'),
+(9015,215,'2026-02-10 13:11',NULL);
+ 
+COMMIT;

@@ -1,0 +1,150 @@
+-- ============================================================
+-- 02_triggers.sql
+-- EatALot Delivery (PostgreSQL)
+-- Triggers (Event–Condition–Action)
+-- ============================================================
+
+-- Trigger 1 – Maintain "Order".total_amount automatically
+CREATE OR REPLACE FUNCTION fn_recalc_order_total()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_order_id INT;
+BEGIN
+  v_order_id := COALESCE(NEW.order_id, OLD.order_id);
+
+  UPDATE "Order" o
+  SET total_amount = COALESCE((
+      SELECT SUM(oi.quantity * oi.priceatordertime)
+      FROM order_item oi
+      WHERE oi.order_id = v_order_id
+  ), 0)
+  WHERE o.order_id = v_order_id;
+
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_recalc_total_ins
+AFTER INSERT ON order_item
+FOR EACH ROW
+EXECUTE FUNCTION fn_recalc_order_total();
+
+CREATE TRIGGER trg_recalc_total_upd
+AFTER UPDATE ON order_item
+FOR EACH ROW
+EXECUTE FUNCTION fn_recalc_order_total();
+
+CREATE TRIGGER trg_recalc_total_del
+AFTER DELETE ON order_item
+FOR EACH ROW
+EXECUTE FUNCTION fn_recalc_order_total();
+
+
+-- Trigger 2 – Prevent delivered order status unless a delivered Delivery exists
+CREATE OR REPLACE FUNCTION fn_order_delivered_requires_delivery()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.order_status = 'delivered' THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM delivery d
+      WHERE d.order_id = NEW.order_id
+        AND d.delivery_status = 'delivered'
+        AND d.dropoff_time IS NOT NULL
+    ) THEN
+      RAISE EXCEPTION
+        'Cannot mark order % as delivered: missing delivered Delivery record.',
+        NEW.order_id;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_order_delivered_requires_delivery
+BEFORE UPDATE OF order_status ON "Order"
+FOR EACH ROW
+EXECUTE FUNCTION fn_order_delivered_requires_delivery();
+
+
+-- Trigger 3 – Successful payments must not exceed "Order".total_amount
+CREATE OR REPLACE FUNCTION fn_payment_not_exceed_total()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_order_total NUMERIC(10,2);
+  v_paid_total  NUMERIC(10,2);
+  v_order_id    INT;
+BEGIN
+  v_order_id := COALESCE(NEW.order_id, OLD.order_id);
+
+  SELECT total_amount INTO v_order_total
+  FROM "Order"
+  WHERE order_id = v_order_id;
+
+  SELECT COALESCE(SUM(amount), 0) INTO v_paid_total
+  FROM paymenttransaction
+  WHERE order_id = v_order_id
+    AND payment_status = 'successful'
+    AND transaction_id <> COALESCE(NEW.transaction_id, -1);
+
+  IF (TG_OP = 'INSERT' AND NEW.payment_status = 'successful')
+     OR (TG_OP = 'UPDATE' AND NEW.payment_status = 'successful') THEN
+    v_paid_total := v_paid_total + NEW.amount;
+  END IF;
+
+  IF v_paid_total > v_order_total THEN
+    RAISE EXCEPTION
+      'Successful payments (%.2f) exceed order % total (%.2f).',
+      v_paid_total, v_order_id, v_order_total;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_payment_not_exceed_total
+BEFORE INSERT OR UPDATE ON paymenttransaction
+FOR EACH ROW
+EXECUTE FUNCTION fn_payment_not_exceed_total();
+
+
+-- Trigger 4 – For group orders, order_item.customer_id must belong to that group
+CREATE OR REPLACE FUNCTION fn_group_order_item_requires_membership()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_group_id INT;
+BEGIN
+  SELECT group_id INTO v_group_id
+  FROM "Order"
+  WHERE order_id = NEW.order_id;
+
+  IF v_group_id IS NOT NULL THEN
+
+    IF NEW.customer_id IS NULL THEN
+      RAISE EXCEPTION
+        'Group order item must have customer_id. Order %.',
+        NEW.order_id;
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM belongs b
+      WHERE b.group_id = v_group_id
+        AND b.customer_id = NEW.customer_id
+    ) THEN
+      RAISE EXCEPTION
+        'Customer % is not a member of group % (Order %).',
+        NEW.customer_id, v_group_id, NEW.order_id;
+    END IF;
+
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_group_order_item_requires_membership
+BEFORE INSERT OR UPDATE ON order_item
+FOR EACH ROW
+EXECUTE FUNCTION fn_group_order_item_requires_membership();

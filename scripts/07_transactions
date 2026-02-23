@@ -1,0 +1,158 @@
+--- Transaction 1 — Individual order lifecycle
+
+BEGIN;
+
+-- Create new individual order
+INSERT INTO "Order"
+(order_id, restaurant_id, order_timestamp, order_status, delivery_address, total_amount, customer_id, group_id)
+VALUES
+(3001, 1, CURRENT_TIMESTAMP, 'created', 'Reeperbahn 12, Hamburg', 0, 1, NULL);
+
+-- Add items (trigger recalculates total_amount)
+INSERT INTO order_item
+(order_id, line_no, menuitem_id, quantity, priceatordertime, special_instructions, customer_id)
+VALUES
+(3001, 1, 1, 1, 12.50, 'no bacon', 1),
+(3001, 2, 3, 1,  6.50, NULL,       1);
+
+-- Change quantity (trigger recalculates)
+UPDATE order_item
+SET quantity = 2
+WHERE order_id = 3001 AND line_no = 1;
+
+-- Remove an item (trigger recalculates)
+DELETE FROM order_item
+WHERE order_id = 3001 AND line_no = 2;
+
+-- Confirm the order
+UPDATE "Order"
+SET order_status = 'confirmed'
+WHERE order_id = 3001;
+
+-- Pay exactly the current order total (safe w/ payment trigger)
+INSERT INTO paymenttransaction
+(transaction_id, order_id, payer_customer_id, amount, currency, transaction_time, payment_method, payment_status)
+SELECT
+  7001,
+  o.order_id,
+  o.customer_id,
+  o.total_amount,
+  'EUR',
+  CURRENT_TIMESTAMP,
+  'Card',
+  'successful'
+FROM "Order" o
+WHERE o.order_id = 3001;
+
+-- View 1 (correct name from Script 5)
+SELECT * FROM v_order_payment_summary WHERE order_id = 3001;
+
+COMMIT;
+
+--- Transaction 2 — Restaurant revenue effect
+
+BEGIN;
+
+-- Create another order at Restaurant 1
+INSERT INTO "Order"
+(order_id, restaurant_id, order_timestamp, order_status, delivery_address, total_amount, customer_id, group_id)
+VALUES
+(3002, 1, CURRENT_TIMESTAMP, 'created', 'Reeperbahn 12, Hamburg', 0, 2, NULL);
+
+-- Add items
+INSERT INTO order_item
+(order_id, line_no, menuitem_id, quantity, priceatordertime, special_instructions, customer_id)
+VALUES
+(3002, 1, 1, 1, 12.50, NULL, 2),
+(3002, 2, 2, 1, 11.00, NULL, 2);
+
+-- Increase quantity (trigger recalculates totals)
+UPDATE order_item
+SET quantity = 2
+WHERE order_id = 3002 AND line_no = 2;
+
+-- Remove pasta line
+DELETE FROM order_item
+WHERE order_id = 3002 AND line_no = 1;
+
+-- Confirm order
+UPDATE "Order"
+SET order_status = 'confirmed'
+WHERE order_id = 3002;
+
+-- Pay full total
+INSERT INTO paymenttransaction
+(transaction_id, order_id, payer_customer_id, amount, currency, transaction_time, payment_method, payment_status)
+SELECT
+  7003,
+  o.order_id,
+  o.customer_id,
+  o.total_amount,
+  'EUR',
+  CURRENT_TIMESTAMP,
+  'PayPal',
+  'successful'
+FROM "Order" o
+WHERE o.order_id = 3002;
+
+-- View 1 (correct name)
+SELECT * FROM v_order_payment_summary WHERE order_id = 3002;
+
+-- View 2 (correct name)
+SELECT *
+FROM v_restaurant_monthly_revenue
+WHERE restaurant_id = 1
+  AND month = date_trunc('month', CURRENT_DATE);
+
+COMMIT;
+
+
+--- Transaction 3 — Delivery lifecycle
+
+BEGIN;
+
+-- Create delivery for existing order 3001
+INSERT INTO delivery
+(delivery_id, order_id, delivery_status, pickup_time, dropoff_time, delivery_fee)
+VALUES
+(9801, 3001, 'assigned', NULL, NULL, 3.50);
+
+-- Assign courier (courier 201 exists in Script 6)
+INSERT INTO assigned (delivery_id, courier_id, assignedat, acceptedat)
+VALUES
+(9801, 201, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Pick up
+UPDATE delivery
+SET delivery_status = 'picked_up',
+    pickup_time = CURRENT_TIMESTAMP
+WHERE delivery_id = 9801;
+
+-- Add a failed payment attempt (cleanup later)
+INSERT INTO paymenttransaction
+(transaction_id, order_id, payer_customer_id, amount, currency, transaction_time, payment_method, payment_status)
+VALUES
+(7002, 3001, 1, 1.00, 'EUR', CURRENT_TIMESTAMP, 'Card', 'failed');
+
+-- Deliver (required before marking Order delivered)
+UPDATE delivery
+SET delivery_status = 'delivered',
+    dropoff_time = CURRENT_TIMESTAMP
+WHERE delivery_id = 9801;
+
+-- Mark order delivered (should pass your trigger rule)
+UPDATE "Order"
+SET order_status = 'delivered'
+WHERE order_id = 3001;
+
+-- Cleanup failed payment attempt
+DELETE FROM paymenttransaction
+WHERE transaction_id = 7002;
+
+-- View 3 (correct name)
+SELECT * FROM v_delivery_overview WHERE order_id = 3001;
+
+-- View 1 (correct name)
+SELECT * FROM v_order_payment_summary WHERE order_id = 3001;
+
+COMMIT;
