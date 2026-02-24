@@ -25,12 +25,3 @@ python flaskapp.py
 ```
 
 Open: http://127.0.0.1:5000
-
-## Push to GitHub
-
-```bash
-git add README.md
-git commit -m "Add README"
-git pull --rebase
-git push
-```
