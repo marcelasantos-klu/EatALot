@@ -1,16 +1,33 @@
-# EatALot
-EatALot is a food delivery application created with SQL and a Python UX
-# EatALot Database Application (Assignment 7)
+# 🍽️ EatALot
+
+Full-stack food ordering platform built with:
+
+- Flask (Python)
+- PostgreSQL
+- Database triggers
+- Group & individual orders
+- Manager dashboard analytics
+
+## Features
+
+- Individual and group orders
+- Automatic order total recalculation via DB trigger
+- Payment + delivery workflow
+- Manager dashboard with KPIs
+- Customer creation from UI
+- Modern responsive UI
 
 ## Setup
-1) Create venv:
-python3 -m venv .venv
-source .venv/bin/activate
 
-2) Install:
+```bash
 pip install -r requirements.txt
+python flaskapp.py
 
-3) Create .env with DB credentials.
+Open: http://127.0.0.1:5000
 
-## Run
-python app.py
+Then:
+
+```bash
+git add README.md
+git commit -m "Add README"
+git push
