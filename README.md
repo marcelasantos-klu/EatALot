@@ -25,3 +25,6 @@ python flaskapp.py
 ```
 
 Open: http://127.0.0.1:5000
+
+## Slide Deck
+To see the complete presentation slides of this project, please navigate to the file EatALot-Slide Deck.pdf
