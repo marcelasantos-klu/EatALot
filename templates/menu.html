@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EatALot - Menu</title>
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --card: #fff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --brand: #2d7ff9;
+            --brand2: #1f5fd1;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .wrap {
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 34px 18px 60px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .brand {
+            font-weight: 900;
+            letter-spacing: .02em;
+        }
+
+        .nav {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .05);
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 22px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: 900;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--brand2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--muted);
+            font-weight: 900;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width:900px) {
+            .grid2 {
+                grid-template-columns: 1fr;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <div class="brand">EatALot</div>
+            <div class="nav">
+                <a href="/">Dashboard</a>
+                <a href="/restaurants">New Order</a>
+                <a href="/manager">Manager</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h1>Menu - Order {{ order_id }}</h1>
+            <div class="muted">
+                Status: <span class="pill">{{ order_status }}</span>
+                &nbsp; • &nbsp; Current total: <strong>€{{ '%.2f'|format(order_total) }}</strong>
+            </div>
+        </div>
+
+        <div class="grid2">
+            <div class="card">
+                <h1 style="font-size:18px;margin-bottom:8px;">Add item</h1>
+
+                <form method="POST">
+                    <input type="hidden" name="action" value="add" />
+                    <label>Menu item</label>
+                    <select name="menuitem_id" required>
+                        {% for it in items %}
+                        <option value="{{ it[0] }}">{{ it[0] }} — {{ it[1] }} (€{{ '%.2f'|format(it[2]) }})
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <div class="row">
+                        <div>
+                            <label>Special instructions (optional)</label>
+                            <input name="special_instructions" placeholder="e.g., no onions, extra spicy" />
+                        </div>
+                        <div>
+                            <label>Quantity</label>
+                            <input type="number" name="quantity" min="1" value="1" required />
+                        </div>
+                    </div>
+
+                    <button class="btn" type="submit" style="margin-top:14px;">Add to order</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h1 style="font-size:18px;margin-bottom:8px;">Current items</h1>
+
+                {% if order_items and order_items|length > 0 %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Item</th>
+                            <th class="right">Qty (edit)</th>
+                            <th class="right">Unit €</th>
+                            <th class="right">Line €</th>
+                            <th>Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in order_items %}
+                        <tr>
+                            <td>{{ r[0] }}</td>
+                            <td>{{ r[1] }}</td>
+                            <td class="right">
+                                <form method="POST"
+                                    style="display:inline-flex; gap:8px; align-items:center; justify-content:flex-end;">
+                                    <input type="hidden" name="action" value="update_qty" />
+                                    <input type="hidden" name="line_no" value="{{ r[0] }}" />
+                                    <input type="number" name="quantity" min="1" value="{{ r[2] }}" style="width:90px;"
+                                        required />
+                                    <button class="btn" type="submit" style="padding:8px 10px;">Update</button>
+                                </form>
+                            </td>
+                            <td class="right">€{{ '%.2f'|format(r[3]) }}</td>
+                            <td class="right"><strong>€{{ '%.2f'|format(r[4]) }}</strong></td>
+                            <td>
+                                <div style="display:flex; flex-direction:column; gap:8px;">
+                                    <div>{{ r[5] if r[5] else '-' }}</div>
+                                    <form method="POST" onsubmit="return confirm('Remove this item from the order?');">
+                                        <input type="hidden" name="action" value="delete_line" />
+                                        <input type="hidden" name="line_no" value="{{ r[0] }}" />
+                                        <button class="btn" type="submit" style="background:#ef4444;">Remove</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+                    <div class="muted">Totals are computed from the database (SUM(quantity × priceAtOrderTime)).
+                    </div>
+                    <a class="btn" href="/checkout/{{ order_id }}">Proceed to checkout</a>
+                </div>
+                {% else %}
+                <div class="muted">No items yet. Add your first item on the left.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
